@@ -1,57 +1,42 @@
 # Volleyball Stat Tracker
 
-A courtside stat-tracking web app for Hustle Volleyball Club. Every point is logged as a **specific action** — not just a tally — so a coach can see *why* the team is winning or losing points while the match is still going on.
+A courtside volleyball tracker for recording how each rally ends. Follow the score and team runs live, see earned-point and error patterns at a glance, sketch plays on a court, and review the match by set.
 
-![Live stats view](docs/screenshots/live-stats.jpg)
+The screenshots below show the app in landscape view.
 
----
+## Live match
 
-## Why I built it
+The overview brings the score, set, current and longest runs, team totals, breakdown charts, and effectiveness charts together on one screen.
 
-This started as pen and paper. I was keeping stats for my team by hand, and all I tracked was points earned versus mistakes. That told me the score, but nothing actionable — I couldn't tell whether we were losing on serve errors or getting blocked, or whether our kills were actually landing.
+<img src="docs/screenshots/stats-overview.png" width="100%" alt="Full-width live match overview with scoreboard, runs, team totals, and charts" />
 
-So the app grew one problem at a time:
+Expand a team's action list to see the specific earned points and errors. Counts are ordered from highest to lowest.
 
-1. **Track the specific action behind every point** instead of just a running total.
-2. Those detailed numbers were hard to read mid-game → **turn them into charts** that show at a glance what's working and where we're breaking down.
-3. Wins come from earning more points than you give away → add an **effectiveness** breakdown (points earned vs. errors made).
-4. Talking through a play wasn't landing with players → add a **whiteboard** over a court diagram to draw it out.
-5. Per-set numbers didn't show the shape of a whole match → add a **game summary** that combines every set into one post-game overview.
+<img src="docs/screenshots/specific-stats.png" width="100%" alt="Expanded earned-point and error counts for both teams" />
 
----
+## Record stats
 
-## Features
+Choose a team and a point type, then select the action that ended the rally. The picker separates earned points from errors.
 
-### Detailed stat entry
+<img src="docs/screenshots/earned-point-picker.png" width="100%" alt="Earned-point action picker" />
 
-Tapping `+` on either team opens a stat picker instead of blindly incrementing a counter. Ten earned-point actions and thirteen error types are tracked, for **both** teams — so you can see what the opponent is scoring on too.
+<img src="docs/screenshots/error-picker.png" width="100%" alt="Error action picker" />
 
-| Points earned | Errors |
-| --- | --- |
-| Kill, Block, Ace, Tool, Overpass Kill, Setter Dump, Tip, Joust, Ball Over, Roll | Serve Error, Attack Error, Shank, Lift, Double-Touch, 4 Touches, Rotation Fault, Antenna, Center Line Fault, Net Touch, Set Error, Free Ball OUT, Free Ball DROP |
+## Whiteboard
 
-<p align="center">
-  <img src="docs/screenshots/stat-entry-earned.jpg" width="49%" alt="Points earned stat picker" />
-  <img src="docs/screenshots/stat-entry-errors.jpg" width="49%" alt="Errors stat picker" />
-</p>
+Sketch plays directly on the volleyball court. Choose an ink color, undo the last mark, or reset the court.
 
-### Live scoreboard and charts
+<img src="docs/screenshots/whiteboard.png" width="100%" alt="Volleyball court whiteboard with play markings" />
 
-The scoreboard, per-action donut charts, and effectiveness rings all update as you log points. The app also tracks **current run** and **longest run** for each team, which is usually the number that tells you when to call a timeout.
+## Match summary
 
-### Whiteboard
+Review set scores, effectiveness, earned-point and error charts, and exact action totals for both teams. Export the summary as an image to share.
 
-A drawing canvas layered over a court diagram, with three colors, undo, and clear. Touch input is filtered to stylus only, so drawing with an Apple Pencil on an iPad works without a resting palm leaving marks on the court.
+<img src="docs/screenshots/game-summary.png" width="100%" alt="Match summary with set results, charts, and team action counts" />
 
-![Whiteboard](docs/screenshots/whiteboard.jpg)
+## Display
 
-### Game summary
-
-After the match, the summary tab combines every saved set: set-by-set scores, overall effectiveness, combined stat breakdowns for both teams, and a one-tap download that exports the whole view as a PNG to share with the team.
-
-![Game summary](docs/screenshots/game-summary.jpg)
-
----
+The stats view is designed for landscape screens, including tablets. In portrait orientation, the app asks the user to turn the device sideways so the scoreboard, teams, and charts remain visible together.
 
 ## Tech stack
 
@@ -62,31 +47,9 @@ After the match, the summary tab combines every saved set: set-by-set scores, ov
 | Charts | Recharts |
 | Drawing | HTML5 Canvas API |
 | Image export | html2canvas |
-| Hosting | Vercel |
 
----
+## Current limitations
 
-## How it works
-
-**One source of truth.** The first version stored the score, the earned/error totals, and the detailed stats as separate pieces of state, and they drifted out of sync constantly. Now the detailed stat objects are the only stored values, and everything else is derived from them:
-
-```js
-const hustleEarned = Object.values(hustleEarnedStats).reduce((sum, val) => sum + val, 0)
-const hustleTotalScore = stats.hustleEarned + stats.otherErrors  // volleyball rally scoring
-```
-
-The scoreboard can't disagree with the data behind it, because it *is* the data.
-
-**All logic in one hook.** `src/hooks/useStatTracking.js` owns every stat, the per-team action history, run tracking, and set save/load. `App.jsx` only wires UI to it. Adding set history later was a change to one file.
-
-**Undo without a full undo stack.** Each team keeps an ordered history array of the actions logged. Pressing `-` pops the most recent entry and decrements that specific stat, so corrections during a fast rally don't require finding the right button.
-
-**Set navigation.** Moving between sets snapshots the current set into `savedSets` and either loads the next set's saved data or resets to zero, so you can go back and fix a set you already finished.
-
-**Canvas details.** Touch listeners are registered with `{ passive: false }` so `preventDefault()` can stop the page from scrolling mid-stroke, pointer coordinates are scaled by the ratio of the canvas's internal resolution to its displayed size, and each completed stroke snapshots the canvas as a data URL to power undo.
-
-## Known limitations / next up
-
-- **No persistence** — stats live in React state, so a refresh mid-match loses the current game. Saving to `localStorage` is the next thing I'd add.
-- **Team-level only** — stats aren't attributed to individual players yet, which is the biggest feature request from coaches.
-- **Match history isn't stored** — the game summary covers one match; there's no season view or trends across games.
+- Stats are held in React state, so refreshing the page clears the active match.
+- Stats are recorded by team, not by individual player.
+- Match history is not stored across games.
